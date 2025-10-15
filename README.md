@@ -92,6 +92,9 @@ vllm serve zai-org/GLM-4.5V \
      --media-io-kwargs '{"video": {"num_frames": -1}}'
 ```
 
+Notes:
+- If you are using vllm==0.11.0 and encounter a `torch.AcceleratorError` when using `fa2` (the default attention backend), try setting the environment variable `VLLM_ATTENTION_BACKEND=FLASHINFER` to switch Attention backand. 
+
 ### SGlang
 
 ```shell

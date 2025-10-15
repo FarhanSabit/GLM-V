@@ -7,6 +7,6 @@ av>=15.0.0
 spaces>=0.40.1
 transformers>=4.56.1
 
-# sglang>=0.5.2  # using with sglang to infer
-# vllm>=0.10.2   # using with vllm to infer
+# sglang>=0.5.3  # using with sglang to infer
+# vllm>=0.11.0   # using with vllm to infer
 # not recommended to install sglang and vllm in the same environment

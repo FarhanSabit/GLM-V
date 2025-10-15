@@ -8,6 +8,7 @@ from pathlib import Path
 from openai import OpenAI
 from PIL import Image
 
+
 def encode_image_to_base64(image_path):
     with open(image_path, "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
@@ -20,8 +21,10 @@ def encode_image_to_base64(image_path):
             mime_type = "image/jpeg"
         return f"data:{mime_type};base64,{encoded_string}"
 
+
 def encode_image_bytes_to_base64(image_bytes: bytes) -> str:
     return base64.b64encode(image_bytes).decode("utf-8")
+
 
 def build_history_images(history_images: list) -> list:
     if len(history_images) == 0:
@@ -40,6 +43,7 @@ def build_history_images(history_images: list) -> list:
 
     return shrunked_images
 
+
 def load_history_images_from_paths(history_image_paths: list) -> list:
     history_images = []
     for img_path in history_image_paths:
@@ -49,6 +53,7 @@ def load_history_images_from_paths(history_image_paths: list) -> list:
         except Exception as e:
             print(f"Error loading image {img_path}: {e}")
     return history_images
+
 
 def get_mobile_prompt(task, history):
     app_names = [
@@ -266,7 +271,7 @@ Calling rule: `{{"action_type": "open_app", "app_name": "<name>"}}`
         "properties": {{
             "app_name": {{
                 "type": "string",
-                "description": "The name of the app to open. Supported apps: {','.join(app_names)}"
+                "description": "The name of the app to open. Supported apps: {",".join(app_names)}"
             }}
         }},
         "required": [
@@ -349,6 +354,7 @@ App Related:
 """
 
     return prompt
+
 
 def get_pc_prompt(task, history, memory, history_images=None):
     action_space = """
@@ -600,23 +606,24 @@ Memory:
 Current Screenshot:
 """
 
-    head_text = USER_TEMPLATE_HEAD.format(
-        task=task,
-        action_space=action_space
-    )
-    
+    head_text = USER_TEMPLATE_HEAD.format(task=task, action_space=action_space)
+
     total_history_steps = len(history)
     history_image_count = len(history_images) if history_images else 0
     content = []
     current_text = head_text
-    
+
     for step_idx in range(total_history_steps):
         step_num = step_idx + 1
         history_response = history[step_idx]
         parsed = parse_pc_response(history_response)
         action_text = parsed.get("action", "")
-        thought_text = parsed.get("action_text", "") 
-        bot_thought = thought_text.replace(action_text, "").strip() if thought_text and action_text else ""
+        thought_text = parsed.get("action_text", "")
+        bot_thought = (
+            thought_text.replace(action_text, "").strip()
+            if thought_text and action_text
+            else ""
+        )
         if step_idx < total_history_steps - history_image_count:
             # For steps beyond the last 4, use text placeholder
             current_text += f"\nstep {step_num}: Screenshot:(Omitted in context.) Thought: {bot_thought}\nAction: {action_text}"
@@ -626,12 +633,15 @@ Current Screenshot:
             content.append({"type": "text", "text": current_text})
             img_idx = step_idx - (total_history_steps - history_image_count)
             if img_idx < len(history_images):
-                content.append({"type": "image_url", "image_url": {"url": history_images[img_idx]}})
+                content.append(
+                    {"type": "image_url", "image_url": {"url": history_images[img_idx]}}
+                )
             current_text = f" Thought: {bot_thought}\nAction: {action_text}"
     tail_text = USER_TEMPLATE_TAIL.format(memory=memory)
     current_text += tail_text
     content.append({"type": "text", "text": current_text})
     return content
+
 
 def parse_mobile_response(response):
     pattern = r"Memory:(.*?)Reason:(.*?)Action:(.*)"
@@ -661,6 +671,7 @@ def parse_mobile_response(response):
         "parsed_action": parsed_action,
     }
 
+
 def parse_pc_response(response):
     pattern = r"<\|begin_of_box\|>(.*?)<\|end_of_box\|>"
     match = re.search(pattern, response)
@@ -671,27 +682,30 @@ def parse_pc_response(response):
         matched = re.findall(downgraded_box_pattern, response)
         action = matched[0] if len(matched) > 0 else None
     if "</think>" in response:
-        answer_pattern = r'</think>(.*?)Memory:'
+        answer_pattern = r"</think>(.*?)Memory:"
     else:
-        answer_pattern = r'^(.*?)Memory:'
+        answer_pattern = r"^(.*?)Memory:"
     answer_match = re.search(answer_pattern, response, re.DOTALL)
     action_text = answer_match.group(1).strip() if answer_match else None
     if action_text:
-        action_text = action_text.replace(" <|begin_of_box|> ","").replace(" <|end_of_box|> ","").replace("<|begin_of_box|>","").replace("<|end_of_box|>","")
+        action_text = (
+            action_text.replace(" <|begin_of_box|> ", "")
+            .replace(" <|end_of_box|> ", "")
+            .replace("<|begin_of_box|>", "")
+            .replace("<|end_of_box|>", "")
+        )
 
     memory_pattern = r"Memory:(.*?)$"
     memory_match = re.search(memory_pattern, response, re.DOTALL)
     memory = memory_match.group(1).strip() if memory_match else "[]"
 
-    return {
-        "action": action,
-        "action_text": action_text,
-        "memory": memory
-    }
+    return {"action": action, "action_text": action_text, "memory": memory}
+
 
 def get_web_prompt(task, web_url, web_elements, memory, history):
     from datetime import datetime, timedelta
-    USER_PROMPT="""
+
+    USER_PROMPT = """
 You are a GUI Agent, and your primary task is to respond accurately to user requests or questions. In addition to directly answering the user's queries, you can also use tools or perform GUI operations directly until you fulfill the user's request or provide a correct answer. You should carefully read and understand the images and questions provided by the user, and engage in thinking and reflection when appropriate. The coordinates involved are all represented in thousandths (0-999).
 
 # Task:
@@ -759,13 +773,19 @@ D. Key Guidelines You MUST follow:
     if history:
         for idx, h in enumerate(history[-15:]):
             history_text += f"{idx}.{h}\n"
-    USER_PROMPT=USER_PROMPT.strip()
-    prompt= USER_PROMPT.replace("{TASK}", task).replace("{Web}",web_url).\
-        replace("{web_text}", web_elements).replace("{PREVIOUS_ACTIONS}", history_text).replace("{Memory}", memory)
+    USER_PROMPT = USER_PROMPT.strip()
+    prompt = (
+        USER_PROMPT.replace("{TASK}", task)
+        .replace("{Web}", web_url)
+        .replace("{web_text}", web_elements)
+        .replace("{PREVIOUS_ACTIONS}", history_text)
+        .replace("{Memory}", memory)
+    )
     beijing_time = datetime.now()
-    time = beijing_time.strftime('%Y-%m-%d, %I:00 %p')
+    time = beijing_time.strftime("%Y-%m-%d, %I:00 %p")
     prompt = prompt.replace("{Time}", time)  # Placeholder for Beijing time
     return prompt
+
 
 def parse_web_response(response):
     pattern = r"Thought:|Action:|Memory_Updated:"
@@ -787,6 +807,7 @@ def parse_web_response(response):
 
     return {"thought": thought, "action": action, "memory": memory}
 
+
 def call_openai_api(messages, client, model="GLM-4.1V-Thinking-FlashX"):
     response = client.chat.completions.create(
         model=model,
@@ -798,6 +819,7 @@ def call_openai_api(messages, client, model="GLM-4.1V-Thinking-FlashX"):
         },
     )
     return response.choices[0].message.content
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -892,6 +914,7 @@ def main():
         if history_images_urls:
             print(f"\n\n ======= History Images Info ======= \n")
             print(f"Number of history images processed: {len(history_images_urls)}")
+
 
 if __name__ == "__main__":
     main()

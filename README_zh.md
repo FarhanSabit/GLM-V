@@ -93,6 +93,9 @@ vllm serve zai-org/GLM-4.5V \
      --media-io-kwargs '{"video": {"num_frames": -1}}'
 ```
 
+注意事项: 
+- 如果使用 `vllm==0.11.0`, 并使用 `fa2` 注意力后端出现`torch.AcceleratorError`报错时, 可尝试增加 `VLLM_ATTENTION_BACKEND=FLASHINFER`环境变量替换注意力后端。
+
 ### SGLang
 
 ```shell
