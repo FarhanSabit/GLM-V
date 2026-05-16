@@ -10,5 +10,5 @@ gradio>=6.9.0
 transformers>=5.5.0
 accelerate>=1.13.0
 
-# sglang>=0.5.10
-# vllm>=0.19.0
+# sglang>=0.5.11
+# vllm>=0.20.2
